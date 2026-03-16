@@ -79,6 +79,34 @@ class TestChildSystemPrompt(unittest.TestCase):
         prompt = _build_child_system_prompt("Do something", "  ")
         self.assertNotIn("CONTEXT", prompt)
 
+    def test_task_delimiters_present(self):
+        prompt = _build_child_system_prompt("Fix the tests")
+        self.assertIn("--- BEGIN TASK ---", prompt)
+        self.assertIn("--- END TASK ---", prompt)
+        # Goal must appear between delimiters
+        begin_idx = prompt.index("--- BEGIN TASK ---")
+        end_idx = prompt.index("--- END TASK ---")
+        goal_idx = prompt.index("Fix the tests")
+        self.assertGreater(goal_idx, begin_idx)
+        self.assertLess(goal_idx, end_idx)
+
+    def test_context_delimiters_present(self):
+        prompt = _build_child_system_prompt("task", "some context data")
+        self.assertIn("--- BEGIN CONTEXT ---", prompt)
+        self.assertIn("--- END CONTEXT ---", prompt)
+        begin_idx = prompt.index("--- BEGIN CONTEXT ---")
+        end_idx = prompt.index("--- END CONTEXT ---")
+        ctx_idx = prompt.index("some context data")
+        self.assertGreater(ctx_idx, begin_idx)
+        self.assertLess(ctx_idx, end_idx)
+
+    def test_injection_guard_present(self):
+        """System prompt should warn the subagent about injection attempts."""
+        prompt = _build_child_system_prompt("anything")
+        self.assertIn("IMPORTANT", prompt)
+        # Should mention that task content is user-provided data
+        self.assertIn("user-provided data", prompt)
+
 
 class TestStripBlockedTools(unittest.TestCase):
     def test_removes_blocked_toolsets(self):

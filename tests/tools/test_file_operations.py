@@ -323,6 +323,64 @@ class TestSearchPathValidation:
         assert "search failed" in result.error.lower() or "Search error" in result.error
 
 
+# =========================================================================
+# _expand_path traversal guard
+# =========================================================================
+
+class TestExpandPathTraversal:
+    """Tests for path traversal protection in _expand_path."""
+
+    @pytest.fixture()
+    def home_env(self):
+        """Mock env where echo $HOME returns /home/testuser."""
+        env = MagicMock()
+        env.cwd = "/tmp/test"
+        env.execute.return_value = {"output": "/home/testuser\n", "returncode": 0}
+        return env
+
+    def test_traversal_outside_home_blocked(self, home_env):
+        """~/../../etc/passwd must not escape the home directory."""
+        ops = ShellFileOperations(home_env)
+        with pytest.raises(ValueError, match="Path traversal blocked"):
+            ops._expand_path("~/../../etc/passwd")
+
+    def test_traversal_double_dotdot_blocked(self, home_env):
+        """~/foo/../../.. should resolve outside home and be blocked."""
+        ops = ShellFileOperations(home_env)
+        with pytest.raises(ValueError, match="Path traversal blocked"):
+            ops._expand_path("~/foo/../../..")
+
+    def test_normal_tilde_path_allowed(self, home_env):
+        """~/documents/file.txt should expand normally."""
+        ops = ShellFileOperations(home_env)
+        result = ops._expand_path("~/documents/file.txt")
+        assert result == "/home/testuser/documents/file.txt"
+
+    def test_dotdot_within_home_allowed(self, home_env):
+        """~/a/../b stays inside home and should be allowed."""
+        ops = ShellFileOperations(home_env)
+        result = ops._expand_path("~/a/../b")
+        assert result == "/home/testuser/a/../b"
+
+    def test_bare_tilde_passthrough(self, home_env):
+        """Bare ~ returns the home directory directly (no traversal check needed)."""
+        ops = ShellFileOperations(home_env)
+        result = ops._expand_path("~")
+        assert result == "/home/testuser"
+
+    def test_absolute_path_unaffected(self, home_env):
+        """Absolute paths bypass tilde expansion entirely."""
+        ops = ShellFileOperations(home_env)
+        result = ops._expand_path("/etc/passwd")
+        assert result == "/etc/passwd"
+
+    def test_relative_path_unaffected(self, home_env):
+        """Relative paths with .. bypass tilde expansion entirely."""
+        ops = ShellFileOperations(home_env)
+        result = ops._expand_path("../../etc/passwd")
+        assert result == "../../etc/passwd"
+
+
 class TestShellFileOpsWriteDenied:
     def test_write_file_denied_path(self, file_ops):
         result = file_ops.write_file("~/.ssh/authorized_keys", "evil key")
