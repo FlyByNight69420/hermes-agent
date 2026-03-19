@@ -591,6 +591,13 @@ OPTIONAL_ENV_VARS = {
         "password": True,
         "category": "tool",
     },
+    "OPENROUTER_RESEARCH_KEY": {
+        "description": "Dedicated OpenRouter API key for Perplexity Sonar Pro research queries",
+        "prompt": "OpenRouter Research Key",
+        "url": "https://openrouter.ai/keys",
+        "password": True,
+        "category": "tool",
+    },
     "BROWSERBASE_API_KEY": {
         "description": "Browserbase API key for cloud browser (optional — local browser works without this)",
         "prompt": "Browserbase API key",
