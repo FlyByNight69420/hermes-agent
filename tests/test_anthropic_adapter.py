@@ -861,7 +861,7 @@ class TestBuildAnthropicKwargs:
         assert kwargs["output_config"] == {"effort": "high"}
         assert "budget_tokens" not in kwargs["thinking"]
         assert "temperature" not in kwargs
-        assert kwargs["max_tokens"] == 4096
+        assert kwargs["max_tokens"] == 32768
 
     def test_reasoning_config_maps_xhigh_to_max_effort_for_4_6_models(self):
         kwargs = build_anthropic_kwargs(

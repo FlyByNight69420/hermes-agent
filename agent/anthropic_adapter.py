@@ -1100,6 +1100,7 @@ def build_anthropic_kwargs(
                 kwargs["output_config"] = {
                     "effort": ADAPTIVE_EFFORT_MAP.get(effort, "medium")
                 }
+                kwargs["max_tokens"] = max(effective_max_tokens, 32768)
             else:
                 kwargs["thinking"] = {"type": "enabled", "budget_tokens": budget}
                 # Anthropic requires temperature=1 when thinking is enabled on older models
