@@ -418,6 +418,19 @@ def run_job(job: dict) -> tuple[bool, str, str, Optional[str]]:
         # Use a separate variable for log display; keep final_response clean
         # for delivery logic (empty response = no delivery).
         logged_response = final_response if final_response else "(No response generated)"
+
+        # Auto-generate session title (non-blocking, best-effort)
+        if _session_db and hasattr(agent, 'session_id'):
+            try:
+                from agent.title_generator import auto_title_session
+                auto_title_session(
+                    _session_db,
+                    agent.session_id,
+                    prompt,
+                    final_response,
+                )
+            except Exception as te:
+                logger.debug("Title generation failed for job '%s': %s", job_id, te)
         
         output = f"""# Cron Job: {job_name}
 
