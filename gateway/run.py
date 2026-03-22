@@ -1555,6 +1555,15 @@ class GatewayRunner:
         if canonical == "voice":
             return await self._handle_voice_command(event)
 
+        if canonical == "queue":
+            queued_text = event.get_command_args().strip()
+            if not queued_text:
+                return "Usage: /queue <prompt>"
+            # Agent isn't busy — treat the queued prompt as a normal message
+            # so it becomes the next turn instead of being rejected.
+            event.text = queued_text
+            # Fall through to normal message handling below
+
         # User-defined quick commands (bypass agent loop, no LLM call)
         if command:
             if isinstance(self.config, dict):
